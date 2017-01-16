@@ -1,0 +1,27 @@
+{
+  "name": "heroku",
+  "version": "1.0.0",
+  "description": "A Tasty Neighborhood",
+  "engines": {
+    "node": "6.0.0"
+  },
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0",
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reliableJARED/YumBarrio.git"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "social network",
+    "food"
+  ],
+  "license": "AFL-2.0"
+}
