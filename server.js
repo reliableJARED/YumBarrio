@@ -1,10 +1,14 @@
 /*
 GOOD START POINT:
+https://code.tutsplus.com/tutorials/authenticating-nodejs-applications-with-passport--cms-21619
+and
 http://stackoverflow.com/questions/38136792/typeerror-req-flash-is-not-a-function
+
+to get mLab MongoDB URI. in CLI type: heroku config | grep MONGODB_URI
 */
 
 var passport = require('passport')
-  , LocalStrategy = require('passport-local').Strategy;
+var LocalStrategy = require('passport-local').Strategy;
 
 var app = require('express')();
 

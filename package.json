@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "express": "^4.14.0",
+    "mongodb": "^2.2.21",
+    "mongoose": "^4.7.7",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
     "serve-static": "^1.11.1"

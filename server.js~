@@ -1,5 +1,10 @@
+/*
+GOOD START POINT:
+http://stackoverflow.com/questions/38136792/typeerror-req-flash-is-not-a-function
+*/
+
 var passport = require('passport')
-  , LocalStrategy = require('passport-local').Strategy;
+var LocalStrategy = require('passport-local').Strategy;
 
 var app = require('express')();
 
