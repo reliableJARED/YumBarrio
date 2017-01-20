@@ -6,81 +6,85 @@ http://stackoverflow.com/questions/38136792/typeerror-req-flash-is-not-a-functio
 and
 http://mherman.org/blog/2016/09/25/node-passport-and-postgres/#.WH7CxT_L9z0
 
-to get mLab MongoDB URI. in CLI type: heroku config | grep MONGODB_URI
 */
 
 var pg = require('pg');
-const spawn = require('child_process').spawn;
 
 //access yumbarrio db on heroko
 //https://devcenter.heroku.com/articles/connecting-to-heroku-postgres-databases-from-outside-of-heroku
 //http://stackoverflow.com/questions/25000183/node-js-postgresql-error-no-pg-hba-conf-entry-for-host
 
-//REQUEST STRING:
+//GET REQUEST STRING INFO:
 /*
 heroku pg:credentials YUMBARRIO_DB_URL
+
+!!!IMPORTANT!!!!
+use heroku CLI to set user name and pw
+heroku config:set DB_USER=MyUserNameHere DB_PASS=MyPasswordHere DB_NAME=dbnameHere
+
+https://devcenter.heroku.com/articles/heroku-local#copy-heroku-config-vars-to-your-local-env-file
+ //--then access with process.env.DB_USER and process.env.DB_PASS
+ NOTE! the .env file should NEVER be posted to github
 */
 
+
+function envData() {
+	var envData;
+	try {
+		envData = require('../YumBarrio_local/env.json') 
+	}catch (e) {
+		envData = process.env }
+	return envData;
+};
+
+//load config data.  This is sensitive info that is avial in heroku environment.  When testing locally, call from file outside git repo
+const environment = envData();
+
 var client = new pg.Client({
-    user: "",
-    password: "",
-    database: "YUMBARRIO_DB_URL",
+    user: environment.DB_USER,
+    password: environment.DB_PASS,
+    database: environment.DB_NAME,
     port: 5432,
-    host: "localhost",
+    host: environment.DB_HOST,
     ssl: true
 });
 
+//CONNECT TO THE DB
 client.connect();
 
+//rowCount will hold a SQL query result
+var rowCount;
 
+var randString = Math.random().toString(36).substring(2,7);
 
-//queries are queued and executed one after another once the connection becomes available
-var x = 1000;
+//COUNT HOW MANY ROWS WE HAVE, THEN ADD NEW
+const query1 = client.query(
+	//FIRST QUERY
+  "SELECT COUNT(*) FROM mytabletest", function (err,result) {
+  		
+  		//Results of FIRST QUERY
+		console.log(result.rows[0].count); 
+		rowCount = result.rows[0].count+1;
+		
+		//SECOND QUERY USING FIRST QUERY RESULTS
+		client.query("INSERT INTO mytabletest VALUES($1,$2)",[rowCount,randString],() =>
+		 { //DISCONNECT AFTER SECOND QUERY
+		 	client.end();});	
+  });
+ 
+ //OTHER EXAMPLES:
+ /*
+//MAKE A TABLE
+const query = client.query(
+  'CREATE TABLE mytabletest (id SERIAL PRIMARY KEY, text VARCHAR(40) not null)');
+query.on('end', () => { client.end(); });
+*/
 
-while (x > 0) {
-    client.query("INSERT INTO junk(name, a_number) values('Ted',12)");
-    client.query("INSERT INTO junk(name, a_number) values($1, $2)", ['John', x]);
-    x = x - 1;
-}
+ /*
+//ADD A ROW --SAFE
+const query = client.query(
+  "INSERT INTO mytabletest VALUES($1,$2)",[8,"tom"]);
+ query.on('end', () => { client.end(); });
 
-var query = client.query("SELECT * FROM junk");
-//fired after last row is emitted
-
-query.on('row', function(row) {
-    console.log(row);
-});
-
-query.on('end', function() {
-    client.end();
-});
-
-
-
-//queries can be executed either via text/parameter values passed as individual arguments
-//or by passing an options object containing text, (optional) parameter values, and (optional) query name
-client.query({
-    name: 'insert beatle',
-    text: "INSERT INTO beatles(name, height, birthday) values($1, $2, $3)",
-    values: ['George', 70, new Date(1946, 02, 14)]
-});
-
-//subsequent queries with the same name will be executed without re-parsing the query plan by postgres
-client.query({
-    name: 'insert beatle',
-    values: ['Paul', 63, new Date(1945, 04, 03)]
-});
-var query = client.query("SELECT * FROM beatles WHERE name = $1", ['john']);
-
-//can stream row results back 1 at a time
-query.on('row', function(row) {
-    console.log(row);
-    console.log("Beatle name: %s", row.name); //Beatle name: John
-    console.log("Beatle birth year: %d", row.birthday.getYear()); //dates are returned as javascript dates
-    console.log("Beatle height: %d' %d\"", Math.floor(row.height / 12), row.height % 12); //integers are returned as javascript ints
-});
-
-//fired after last row is emitted
-query.on('end', function() {
-    client.end();
-});
+*/
 
