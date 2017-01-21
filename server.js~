@@ -3,6 +3,8 @@ GOOD START POINT:
 https://code.tutsplus.com/tutorials/authenticating-nodejs-applications-with-passport--cms-21619
 and
 http://stackoverflow.com/questions/38136792/typeerror-req-flash-is-not-a-function
+and
+http://mherman.org/blog/2016/09/25/node-passport-and-postgres/#.WH7CxT_L9z0
 
 to get mLab MongoDB URI. in CLI type: heroku config | grep MONGODB_URI
 */

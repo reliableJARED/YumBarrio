@@ -1,1 +1,1 @@
-web: node connpostgres.js
+web: node server.js
