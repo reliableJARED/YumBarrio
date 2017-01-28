@@ -60,6 +60,15 @@ const connectionString = {
 //and set a limit of maximum 10 idle
 var ConnectionPool = new pg.Pool(connectionString);
 
+ 
+//ADD A ROW --SAFE
+/*
+ConnectionPool.connect(function (err,client,done) {
+	console.log('insert')
+	client.query("INSERT INTO logintest(email,password) VALUES($1,$2)",["bob@gmail.com","pass123*"]);
+});
+*/
+
 app.post('/login', (request, response, next) => {
  
   // Get a Postgres client from the connection pool
