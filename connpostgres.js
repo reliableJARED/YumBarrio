@@ -56,7 +56,7 @@ client.connect();
 var rowCount;
 
 var randString = Math.random().toString(36).substring(2,7);
-
+/*
 //COUNT HOW MANY ROWS WE HAVE, THEN ADD NEW
 const query1 = client.query(
 	//FIRST QUERY
@@ -71,14 +71,14 @@ const query1 = client.query(
 		 { //DISCONNECT AFTER SECOND QUERY
 		 	client.end();});	
   });
- 
+ */
  //OTHER EXAMPLES:
- /*
+ 
 //MAKE A TABLE
 const query = client.query(
-  'CREATE TABLE mytabletest (id SERIAL PRIMARY KEY, text VARCHAR(40) not null)');
+  'CREATE TABLE facebook (id SERIAL PRIMARY KEY, text VARCHAR(40) not null)');
 query.on('end', () => { client.end(); });
-*/
+
 
  /*
 //ADD A ROW --SAFE

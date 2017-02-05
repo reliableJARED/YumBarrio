@@ -5,12 +5,13 @@ and
 https://github.com/brianc/node-postgres/wiki/Parameterized-queries-and-Prepared-Statements
 */
 
-
+https://github.com/brianc/node-postgres
 var pg = require('pg');
 
 
 var passport = require('passport')
 
+//https://github.com/jaredhanson/passport-facebook
 var FacebookStrategy = require('passport-facebook').Strategy;
 
 var app = require('express')();
@@ -25,6 +26,7 @@ app.use( bodyParser.urlencoded({ extended: true }) );
 
 //Express initializes app to be a function handler that you can supply to an HTTP server
 var http = require('http').createServer(app);
+
 //required for serving locally when testing
 var serveStatic = require('serve-static');
 //app.use(express.static('directorypath')) --Express tool for local serving
@@ -223,6 +225,24 @@ function User() {
    };
 }
 
+User.findByFacebook = function(fbProfile, callback){
+	console.log(fbProfile);
+	/*
+	
+	This should be part of a database lookup, but to keep it simple just create a user for the callback.
+	see login_passport.js for example of db connection	
+	
+	*/
+	 			var user = new User();
+             	 user.firstName = fbProfile._json.first_name;
+             	  console.log("HI: ",fbProfile._json.first_name);
+                user.photo = fbProfile.photos[0].value;
+              console.log("PHOTO: ",fbProfile.photos[0].value);
+              user.database_id = fbProfile._json.id;
+              console.log("FB id: ",fbProfile._json.id);
+            	 return callback(null, user);
+}
+
 User.findByEmail = function(email, callback){
 
     var isAvailable = false; //change to true if email not found in db
@@ -370,19 +390,35 @@ var User            = require('../SomePath/user');
             // pull in our app id and secret from our auth.js file
             clientID        : '954261538041538',
             clientSecret    : '82c3c35b10b27be95c6aeb0a97558ac5',
-            callbackURL     : 'http://localhost:5000/login'
+            callbackURL     : 'http://localhost:5000/login/callback',
+            profileFields: ['id', 'name','picture.type(large)', 'emails', 'displayName', 'about', 'gender'], 
+            
+            //RETURN FROM FB:
+            /*
+			{ id: '10100575364401165',
+  				username: undefined,
+  				displayName: 'Jared Nugent',
+  				name: 
+  				 { familyName: undefined,
+     				givenName: undefined,
+    				 middleName: undefined },
+  				gender: undefined,
+  				profileUrl: undefined,
+ 				provider: 'facebook',
+  				_raw: '{"name":"Jared Nugent","id":"10100575364401165"}',
+ 			   _json: { name: 'Jared Nugent', id: '10100575364401165' }
+ 			 }
 
+				*/
         },
 
         // facebook will send back the token and profile
         function(token, refreshToken, profile, done) {
 
-            // asynchronous
-            process.nextTick(function() {
 
                 // find the user in the database based on their facebook id
-                User.findOne({ 'facebook.id' : profile.id }, function(err, user) {
-
+               // User.findByFacebook({ 'facebook.id' : profile.id }, function(err, user) {
+					User.findByFacebook( profile, function(err, user) {
                     // if there is an error, stop everything and return that
                     // ie an error connecting to the database
                     if (err)
@@ -390,6 +426,7 @@ var User            = require('../SomePath/user');
 
                     // if the user is found, then log them in
                     if (user) {
+                    	
                         return done(null, user); // user found, return that user
                     } else {
                         // if there is no user found with that facebook id, create them
@@ -414,7 +451,6 @@ var User            = require('../SomePath/user');
                     }
 
                 });
-            });
 
         }));
 
@@ -443,11 +479,32 @@ app.post('/login', passport.authenticate('facebook-login', {
     }));
     
     
- app.get('/login', isLoggedIn, function(req, res) {
+app.get('/login',
+  passport.authenticate('facebook-login'));
+
+
+//facebook will return user here
+app.get('/login/callback',
+  passport.authenticate('facebook-login', { 
+  failureRedirect: '/home' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+     res.sendFile(__dirname+'/login.html')
+  });    
+    
+    
+/*
+//facebook will return user here
+ app.get('/login/callback', isLoggedIn, function(req, res) {
         console.log(req.user);
         res.sendFile(__dirname+'/login.html')
     });
-    
+*/
+ app.get('/home', function(req, res) {
+        console.log(req.user);
+        res.sendFile(__dirname+'/home.html')
+    });
+ 
  // route middleware to make sure a user is logged in
 function isLoggedIn(req, res, next) {
 
