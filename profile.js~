@@ -1,0 +1,13 @@
+// exposes a global for our socket connection
+//var socket = io();
+ 
+	//	socket.on('profile',function(facebookProfileJSON){
+						
+	//	console.log(facebookProfileJSON);
+//}); 
+ 
+ 	// exposes a global for our socket connection
+	var socket = io();
+	socket.on('connect',function(msg){
+			console.log('connected')	
+		});

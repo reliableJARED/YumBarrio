@@ -539,7 +539,7 @@ app.get('/login/callback',
 
 	console.log('USER::: ',req.user)  	
 	console.log(req.path);	
- 
+  console.log(io)
     // Successful authentication, redirect home.
     console.log('DIR: ', __dirname)
      res.sendFile(__dirname+'/login.html');

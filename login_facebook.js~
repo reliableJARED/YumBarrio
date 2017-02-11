@@ -27,32 +27,9 @@ app.use( bodyParser.urlencoded({ extended: true }) );
 //Express initializes app to be a function handler that you can supply to an HTTP server
 var http = require('http').createServer(app);
 
-//A server that integrates with (or mounts on) the Node.JS HTTP Server: socket.io
-var io = require('socket.io')(http);
-
 //required for serving locally when testing
 var serveStatic = require('serve-static');
 //app.use(express.static('directorypath')) --Express tool for local serving
-//dir with socketio code
-//app.use(serveStatic(__dirname + '/socket.io/'));
-app.use(serveStatic(__dirname + '/login/callback'));
-
-
-//****MIDDLE WARE FOR AUTH PROTECT DIRECTORY
-//http://stackoverflow.com/questions/21335868/how-to-protect-static-folder-in-express-with-passport
-//req.user is assigned by passport.  if they are not logged in this should prevent access to this directory
-app.use(function(req, res, next) {
-    if (req.user == null && req.path.indexOf('/callback') === 0)
-    {
-        res.redirect('/home');
-    }
-    next(); 
-});
-
-
-
-
-
 
 
 //listen for connections
@@ -90,7 +67,6 @@ const connectionString = {
 //it will keep idle connections open for a 30 seconds
 //and set a limit of maximum 10 idle
 var client = new pg.Pool(connectionString);
-
 
 
  /*
@@ -250,12 +226,10 @@ function User() {
 }
 
 User.findByFacebook = function(fbProfile, callback){
-		
-		console.log(fbProfile);
-	
+	console.log(fbProfile);
 	/*
 	
-	This should be part of a database lookup, but to keep it simple just create a user for the callback.
+	This should be part of a database lookup, but to keep it simple just create a user.
 	see login_passport.js for example of db connection	
 	
 	*/
@@ -266,8 +240,6 @@ User.findByFacebook = function(fbProfile, callback){
               console.log("PHOTO: ",fbProfile.photos[0].value);
               user.database_id = fbProfile._json.id;
               console.log("FB id: ",fbProfile._json.id);
-            
-              
             	 return callback(null, user);
 }
 
@@ -286,7 +258,8 @@ User.findByEmail = function(email, callback){
         		}
        
         		if (result.rowCount === 1){
-            	 console.log(email + ' was found!');          	
+            	 console.log(email + ' was found!');
+            	
             	 	  var user = new User();
                     user.email= result.rows[0]['email'];
                     user.password = result.rows[0]['password'];
@@ -323,17 +296,7 @@ User.findById = function(id, callback){
     
    	 client.query("SELECT * from logintest where id=$1", [id], function(err, result){
       	  if(err){
-         	  // return callback(err, null);
-         	  
-         	  //****** REMOVE THIS!!!**********
-         	  //below is for testing only, all cases return user
-         	  console.log(id + ' found!');
-            	 	  var user = new User();
-                    user.email= 'test';
-                    user.password = 'test';
-                    user.database_id = 'test';
-                    done();
-                   return callback(null,user);
+         	   return callback(err, null);
         		}
        
         		if (result.rowCount === 1){
@@ -345,17 +308,8 @@ User.findById = function(id, callback){
                     done();
                    return callback(null,user);
         		}else {
-        			// done();
-        			//return callback("ID NOT FOUND", null);
-        			 //****** REMOVE THIS!!!**********
-         	  //below is for testing only, all cases return user
-         	  console.log(id + ' found!');
-            	 	  var user = new User();
-                    user.email= 'test';
-                    user.password = 'test';
-                    user.database_id = 'test';
-                    done();
-                   return callback(null,user);
+        			 done();
+        			return callback("ID NOT FOUND", null);
         		}
         		
    	 });
@@ -422,11 +376,9 @@ var User            = require('../SomePath/user');
     // used to deserialize the user
     passport.deserializeUser(function(id, done) {
         console.log(id + " is deserialized");
-       
         User.findById(id, function(err, user) {
             done(err, user);
         });
-
     });
 
     
@@ -462,6 +414,7 @@ var User            = require('../SomePath/user');
 
         // facebook will send back the token and profile
         function(token, refreshToken, profile, done) {
+
 
                 // find the user in the database based on their facebook id
                // User.findByFacebook({ 'facebook.id' : profile.id }, function(err, user) {
@@ -527,8 +480,7 @@ app.post('/login', passport.authenticate('facebook-login', {
     
     
 app.get('/login',
-  passport.authenticate('facebook-login')
-  );
+  passport.authenticate('facebook-login'));
 
 
 //facebook will return user here
@@ -536,32 +488,10 @@ app.get('/login/callback',
   passport.authenticate('facebook-login', { 
   failureRedirect: '/home' }),
   function(req, res) {
-
-	console.log('USER::: ',req.user)  	
-	console.log(req.path);	
- 
     // Successful authentication, redirect home.
-    console.log('DIR: ', __dirname)
-     res.sendFile(__dirname+'/login.html');
-     
-	
+     res.sendFile(__dirname+'/login.html')
   });    
-
-
- //socketio listener for 'connection'
-io.on('connection', function(socket){
-		
-						console.log('hi socket: ',socket.id);
-						
-						
-						//io.to(socket.id).emit('profile',fbProfile._json.id));
-						//  console.log('socketID: ',socket.io.engine.id)
-						//
-						 //io.to(socketID).emit('profile',fbProfile._json.id);
-						//              
-						//io.emit('removePlayer',ID);
-	
-		});
+    
     
 /*
 //facebook will return user here

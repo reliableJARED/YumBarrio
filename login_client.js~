@@ -1,0 +1,34 @@
+<!doctype html>
+<!--
+https://github.com/reliableJARED/YumBarrio
+-->
+<html>
+  <head>
+    <title>A Tasty Neighborhood</title>
+  </head>
+  
+
+  <body>
+
+		<script src="socket.io.min.js"></script>	 
+ 	
+ 		<script src="profile.js"></script>
+ 
+    <div>
+       <p>You're IN!</p>
+    </div>
+<form action="/login" method="post">
+    
+        <input type="submit" value="Log Out"/>
+
+</form>
+
+<script type="text/javascript" >
+	// exposes a global for our socket connection
+	var socket = io();
+	socket.on('connect',function(msg){
+			console.log('connected')	
+		});
+</script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<!--
+https://github.com/reliableJARED/YumBarrio
+-->
+<html>
+  <head>
+    <title>A Tasty Neighborhood</title>
+  </head>
+  
+
+  <body>
+ <!-- see "/login" post handler on logoin.js server code -->
+		<form action="/signup" method="post">
+    <div>
+        <label>Username:</label>
+        <input type="text" name="email" value="EMAIL"/>
+    </div>
+    <div>
+        <label>Password:</label>
+        <input type="password" name="password" value="PASSWORD"/>
+    </div>
+    <div>
+        <input type="submit" value="Sign Up"/>
+    </div>
+</form>
+
+
+  </body>
+</html>

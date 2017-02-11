@@ -5,14 +5,14 @@ and
 https://github.com/brianc/node-postgres/wiki/Parameterized-queries-and-Prepared-Statements
 */
 
-https://github.com/brianc/node-postgres
+
 var pg = require('pg');
 
 
 var passport = require('passport')
 
-//https://github.com/jaredhanson/passport-facebook
-var FacebookStrategy = require('passport-facebook').Strategy;
+
+var LocalStrategy = require('passport-local').Strategy;
 
 var app = require('express')();
 var session = require('express-session');
@@ -26,33 +26,9 @@ app.use( bodyParser.urlencoded({ extended: true }) );
 
 //Express initializes app to be a function handler that you can supply to an HTTP server
 var http = require('http').createServer(app);
-
-//A server that integrates with (or mounts on) the Node.JS HTTP Server: socket.io
-var io = require('socket.io')(http);
-
 //required for serving locally when testing
 var serveStatic = require('serve-static');
 //app.use(express.static('directorypath')) --Express tool for local serving
-//dir with socketio code
-//app.use(serveStatic(__dirname + '/socket.io/'));
-app.use(serveStatic(__dirname + '/login/callback'));
-
-
-//****MIDDLE WARE FOR AUTH PROTECT DIRECTORY
-//http://stackoverflow.com/questions/21335868/how-to-protect-static-folder-in-express-with-passport
-//req.user is assigned by passport.  if they are not logged in this should prevent access to this directory
-app.use(function(req, res, next) {
-    if (req.user == null && req.path.indexOf('/callback') === 0)
-    {
-        res.redirect('/home');
-    }
-    next(); 
-});
-
-
-
-
-
 
 
 //listen for connections
@@ -90,7 +66,6 @@ const connectionString = {
 //it will keep idle connections open for a 30 seconds
 //and set a limit of maximum 10 idle
 var client = new pg.Pool(connectionString);
-
 
 
  /*
@@ -249,28 +224,6 @@ function User() {
    };
 }
 
-User.findByFacebook = function(fbProfile, callback){
-		
-		console.log(fbProfile);
-	
-	/*
-	
-	This should be part of a database lookup, but to keep it simple just create a user for the callback.
-	see login_passport.js for example of db connection	
-	
-	*/
-	 			var user = new User();
-             	 user.firstName = fbProfile._json.first_name;
-             	  console.log("HI: ",fbProfile._json.first_name);
-                user.photo = fbProfile.photos[0].value;
-              console.log("PHOTO: ",fbProfile.photos[0].value);
-              user.database_id = fbProfile._json.id;
-              console.log("FB id: ",fbProfile._json.id);
-            
-              
-            	 return callback(null, user);
-}
-
 User.findByEmail = function(email, callback){
 
     var isAvailable = false; //change to true if email not found in db
@@ -286,7 +239,8 @@ User.findByEmail = function(email, callback){
         		}
        
         		if (result.rowCount === 1){
-            	 console.log(email + ' was found!');          	
+            	 console.log(email + ' was found!');
+            	
             	 	  var user = new User();
                     user.email= result.rows[0]['email'];
                     user.password = result.rows[0]['password'];
@@ -323,17 +277,7 @@ User.findById = function(id, callback){
     
    	 client.query("SELECT * from logintest where id=$1", [id], function(err, result){
       	  if(err){
-         	  // return callback(err, null);
-         	  
-         	  //****** REMOVE THIS!!!**********
-         	  //below is for testing only, all cases return user
-         	  console.log(id + ' found!');
-            	 	  var user = new User();
-                    user.email= 'test';
-                    user.password = 'test';
-                    user.database_id = 'test';
-                    done();
-                   return callback(null,user);
+         	   return callback(err, null);
         		}
        
         		if (result.rowCount === 1){
@@ -345,17 +289,8 @@ User.findById = function(id, callback){
                     done();
                    return callback(null,user);
         		}else {
-        			// done();
-        			//return callback("ID NOT FOUND", null);
-        			 //****** REMOVE THIS!!!**********
-         	  //below is for testing only, all cases return user
-         	  console.log(id + ' found!');
-            	 	  var user = new User();
-                    user.email= 'test';
-                    user.password = 'test';
-                    user.database_id = 'test';
-                    done();
-                   return callback(null,user);
+        			 done();
+        			return callback("ID NOT FOUND", null);
         		}
         		
    	 });
@@ -422,87 +357,112 @@ var User            = require('../SomePath/user');
     // used to deserialize the user
     passport.deserializeUser(function(id, done) {
         console.log(id + " is deserialized");
-       
         User.findById(id, function(err, user) {
             done(err, user);
         });
-
     });
 
-    
-     // =========================================================================
-    // FACEBOOK ================================================================
     // =========================================================================
-    passport.use('facebook-login', new FacebookStrategy({
-
-            // pull in our app id and secret from our auth.js file
-            clientID        : '954261538041538',
-            clientSecret    : '82c3c35b10b27be95c6aeb0a97558ac5',
-            callbackURL     : 'http://localhost:5000/login/callback',
-            profileFields: ['id', 'name','picture.type(large)', 'emails', 'displayName', 'about', 'gender'], 
-            
-            //RETURN FROM FB:
-            /*
-			{ id: '10100575364401165',
-  				username: undefined,
-  				displayName: 'Jared Nugent',
-  				name: 
-  				 { familyName: undefined,
-     				givenName: undefined,
-    				 middleName: undefined },
-  				gender: undefined,
-  				profileUrl: undefined,
- 				provider: 'facebook',
-  				_raw: '{"name":"Jared Nugent","id":"10100575364401165"}',
- 			   _json: { name: 'Jared Nugent', id: '10100575364401165' }
- 			 }
-
-				*/
+    // LOCAL SIGNUP ============================================================
+    // =========================================================================
+    // we are using named strategies since we have one for login and one for signup
+    // by default, if there was no name, it would just be called 'local'
+/*
+    passport.use('local-signup', new LocalStrategy({
+            usernameField : 'email',
+            passwordField : 'password',
+            passReqToCallback : true // allows us to pass back the entire request to the callback
         },
+        function(req, email, password, done) {
 
-        // facebook will send back the token and profile
-        function(token, refreshToken, profile, done) {
+            // asynchronous
+            // User.findOne wont fire unless data is sent back
+            process.nextTick(function(callback) {
 
-                // find the user in the database based on their facebook id
-               // User.findByFacebook({ 'facebook.id' : profile.id }, function(err, user) {
-					User.findByFacebook( profile, function(err, user) {
-                    // if there is an error, stop everything and return that
-                    // ie an error connecting to the database
+
+                // find a user whose email is the same as the forms email
+                // we are checking to see if the user trying to login already exists
+                User.findByEmail(email, function(err, isAvailable, user) {
+                    //console.log('userfound: ' + isNotAvailable);
+                    // if there are any errors, return the error
                     if (err)
                         return done(err);
+                    //if (){
+                    //
+                    //}
 
-                    // if the user is found, then log them in
-                    if (user) {
-                    	
-                        return done(null, user); // user found, return that user
+                    // check to see if theres already a user with that email
+                    if (isAvailable == true) {
+                        //console.log(user.email +' is not available');
+                        return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
                     } else {
-                        // if there is no user found with that facebook id, create them
-                        var newUser = new User();
+                        console.log('new local user');
 
-                        // set all of the facebook information in our user model
-                        newUser.facebook.id    = profile.id; // set the users facebook id
-                        newUser.facebook.token = token; // we will save the token that facebook provides to the user
-                        newUser.facebook.name  = profile.name.givenName + ' ' + profile.name.familyName; // look at the passport user profile to see how names are returned
-                        newUser.facebook.email = profile.emails[0].value; // facebook can return multiple emails so we'll take the first
-								
-								console.log(newUser)	
-								
-                        // save our user to the database
-                        newUser.save(function(err) {
-                            if (err)
-                                throw err;
+                        // if there is no user with that email
+                        // create the user
+                        user            = new User();
 
-                            // if successful, return the new user
+
+                        // set the user's local credentials
+
+                        user.email    = req.body.email;
+                        user.password = req.body.password;
+                        //newUser.photo = 'http://www.flippersmack.com/wp-content/uploads/2011/08/Scuba-diving.jpg';
+
+                        user.save(function(newUser) {
+                            console.log("the object user is: ", newUser);
+                            passport.authenticate();
                             return done(null, newUser);
+                            //newUser.password = newUser.generateHash(password);
                         });
                     }
 
                 });
 
+            });
+
         }));
 
-		return passport;
-	}
+*/
+
+    // =========================================================================
+    // LOCAL LOGIN =============================================================
+    // =========================================================================
+    // we are using named strategies since we have one for login and one for signup
+    // by default, if there was no name, it would just be called 'local'
+
+    passport.use('local-login',new LocalStrategy({
+            usernameField : 'username',
+            passwordField : 'password',
+            passReqToCallback : true // allows us to pass back the entire request to the callback
+        },
+        function(req, email, password, done) { // callback with email and password from our form
+			console.log("WORKING")
+			console.log("done",done)
+            // find a user whose email is the same as the forms email
+            // we are checking to see if the user trying to login already exists
+         //   User.findByEmail({ 'local.email' :  email }, function(err, user) {
+         	User.findByEmail(email, function(err, user) {
+                // if there are any errors, return the error before anything else
+                if (err) return done(err);
+
+                // if no user is found, return the message
+                if (!user) return done(null, false, console.log('loginMessage', 'No user found.')); // req.flash is the way to set flashdata using connect-flash
+
+                 // if the user is found but the password is wrong
+            	 //   if (!user.validPassword(password))
+               //     return done(null, false, console.log('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
+
+                // all is well, return successful user
+                 return done(null, user);
+            });
+
+        }));
+	
+	return passport;
+    };
+
+
 
 //***********************************************
 //		END file:     PASSPORT.JS
@@ -512,69 +472,25 @@ var User            = require('../SomePath/user');
 passport = configPassport(passport);
 
 // required for passport
-app.use(session({ secret: 'topSecretStuff411' })); // session secret
+app.use(session({ secret: 'ilovescotchscotchyscotchscotch' })); // session secret
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 
 // process the login form
 // app.post('/login', do all our passport stuff here);
 // process the login form
-app.post('/login', passport.authenticate('facebook-login', {
+app.post('/login', passport.authenticate('local-login', {
         successRedirect : '/login', // redirect to the secure profile section
         failureRedirect : '/home', // redirect back to the signup page if there is an error
         failureFlash : false // allow flash messages
     }));
     
     
-app.get('/login',
-  passport.authenticate('facebook-login')
-  );
-
-
-//facebook will return user here
-app.get('/login/callback',
-  passport.authenticate('facebook-login', { 
-  failureRedirect: '/home' }),
-  function(req, res) {
-
-	console.log('USER::: ',req.user)  	
-	console.log(req.path);	
- 
-    // Successful authentication, redirect home.
-    console.log('DIR: ', __dirname)
-     res.sendFile(__dirname+'/login.html');
-     
-	
-  });    
-
-
- //socketio listener for 'connection'
-io.on('connection', function(socket){
-		
-						console.log('hi socket: ',socket.id);
-						
-						
-						//io.to(socket.id).emit('profile',fbProfile._json.id));
-						//  console.log('socketID: ',socket.io.engine.id)
-						//
-						 //io.to(socketID).emit('profile',fbProfile._json.id);
-						//              
-						//io.emit('removePlayer',ID);
-	
-		});
+ app.get('/login', isLoggedIn, function(req, res) {
+        console.log(req.user);
+        response.sendFile(__dirname+'/login.html')
+    });
     
-/*
-//facebook will return user here
- app.get('/login/callback', isLoggedIn, function(req, res) {
-        console.log(req.user);
-        res.sendFile(__dirname+'/login.html')
-    });
-*/
- app.get('/home', function(req, res) {
-        console.log(req.user);
-        res.sendFile(__dirname+'/home.html')
-    });
- 
  // route middleware to make sure a user is logged in
 function isLoggedIn(req, res, next) {
 

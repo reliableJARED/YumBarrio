@@ -77,7 +77,8 @@ const query1 = client.query(
 //MAKE A TABLE
 const query = client.query(
 
-'CREATE TABLE profiletest (id SERIAL PRIMARY KEY, email varchar(255) NOT NULL, /*ENFORCE no null values*/ facebookid  bigint,pwhash varchar(255))'
+'CREATE TABLE profiletest (/
+id SERIAL PRIMARY KEY, email varchar(255) NOT NULL, /*ENFORCE no null values*/ facebookid  bigint,pwhash varchar(255))'
 );
 
 query.on('end', () => { client.end(); });
