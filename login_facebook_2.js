@@ -17,6 +17,14 @@ var FacebookStrategy = require('passport-facebook').Strategy;
 var app = require('express')();
 var session = require('express-session');
 
+var sessionMiddleware = session({
+    name: "iamcookie",
+    secret: "topSecretStuff411",
+});
+
+
+
+
 var bodyParser = require('body-parser');
 //use the `bodyParser()` middleware in app
 //this way for requests we can do things like request.body to get form input data
@@ -27,14 +35,13 @@ app.use( bodyParser.urlencoded({ extended: true }) );
 //Express initializes app to be a function handler that you can supply to an HTTP server
 var http = require('http').createServer(app);
 
-//A server that integrates with (or mounts on) the Node.JS HTTP Server: socket.io
-var io = require('socket.io')(http);
+
 
 //required for serving locally when testing
 var serveStatic = require('serve-static');
 //app.use(express.static('directorypath')) --Express tool for local serving
 //dir with socketio code
-//app.use(serveStatic(__dirname + '/socket.io/'));
+app.use(serveStatic(__dirname + '/socket.io/'));
 app.use(serveStatic(__dirname + '/login/callback'));
 
 
@@ -48,11 +55,6 @@ app.use(function(req, res, next) {
     }
     next(); 
 });
-
-
-
-
-
 
 
 //listen for connections
@@ -90,26 +92,6 @@ const connectionString = {
 //it will keep idle connections open for a 30 seconds
 //and set a limit of maximum 10 idle
 var client = new pg.Pool(connectionString);
-
-
-
- /*
-//MAKE A TABLE
-//http://dba.stackexchange.com/questions/68266/postgresql-datatype-for-email-address
- //DON'T use email as PK because The issue is that the email address cannot be changed afterwards, because it's both a primary key & referenced as foreign key
-const query = client.query(
-  'CREATE TABLE logintest (id SERIAL PRIMARY KEY,  email VARCHAR(256) not null,password VARCHAR(256) not null)');
-  	
-query.on('end', () => { client.end(); });
-*/
-
- /*
-//ADD A ROW --SAFE
-const query = client.query(
-  "INSERT INTO logintest VALUES(8,$1,$2)",["jarednugent@gmail.com","pass123*"]);
- query.on('end', () => { client.end(); });
-*/
-
  
 //serve HTML to initial get request
 app.get('/', function(request, response){
@@ -117,86 +99,7 @@ app.get('/', function(request, response){
 });
 
  
-//CREATE FILE: app/routes.js
-//*****EXPORT BELOW
-    // =====================================
-    // HOME PAGE (with login links) ========
-    // =====================================
-    /*
-app.get('/', function(request, response) {
-        response.sendFile(__dirname+'/home.html');
-    });
 
-app.post('/login', function(request, response) {
-		//	console.log(Object.keys(request));
-			console.log('input:',request.body.username);
-			findEmail({column:'email', data:request.body.username});
-			//var result = findEmail({column:'email', data:request.body.username});
-		//	console.log('result',result)
-      //  if(result === request.body.username)response.sendFile(__dirname+'/login.html');
-    });
-
-
-
-
-function findEmail(find) {
-	
-	//Database Connection Config
-	var DATABASE = new pg.Client({
-   	 user: environment.DB_USER,
-    	password: environment.DB_PASS,
-    	database: environment.DB_NAME,
-   	 port: 5432,
-    	host: environment.DB_HOST,
-    	ssl: true
-	});
-
-	//CONNECT TO THE DB
-	DATABASE.connect();
-	
-	//wrap query in promise: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then
-	const Qresult = new Promise(
-				function(resolve,reject){
-					resolve(DATABASE.query("SELECT email FROM logintest WHERE email=$1", [find.data]));
-					});
-		//http://stackoverflow.com/questions/22078839/installing-passportjs-with-postgresql		
-		//GOT WHAT WE WERE LOOKING FOR		
-		Qresult.then( (success) => {
-				console.log('found',success.rows[0].email)
-
-				DATABASE.end();
-     		   return success.rows[0].email;
-      	})
-      //SOMETHING WENT WRONG
-      .catch( (err) => {
-      		DATABASE.end();
-     		   log.error("/login ERROR: " + err);
-        		return 999;
-     	 });
-	return Qresult
-};
-*/
-//****************************************************************
-//		file:		USER.JS  
-//****************************************************************
-/*
-//HEADERS when imported as file
-var pg           = require('pg');
-const connectionString = {
-   	 user: environment.DB_USER,
-    	password: environment.DB_PASS,
-    	database: environment.DB_NAME,
-   	 port: 5432,
-    	host: environment.DB_HOST,
-    	ssl: true
-	};
-//this initializes a connection pool
-//it will keep idle connections open for a 30 seconds
-//and set a limit of maximum 10 idle
-var client = new pg.Pool(connectionString);
-
-function User(){
-*/
 function User() {    
 	 this.database_id;//SQL assigned Primary Key, our database assigns this
     this.email;
@@ -303,10 +206,7 @@ User.findByEmail = function(email, callback){
             	 done();//disconnect from db
             	 return callback(false, false);
         		}
-        //the callback has 3 args:
-        // arg err: false if there is no error
-        // arg isAvailable: whether the email is available or not
-        // arg this: the User object;
+    
 
         done();//disconnect from db
         
@@ -362,43 +262,6 @@ User.findById = function(id, callback){
 	});
 };
 
-//WHEN IMPORTED
-//module.exports = User;
-
-
-//****************************************************************
-//		END file:		USER.JS  
-//****************************************************************
-
-
-
-//****************************************************************
-//		file:		PASSPORT.JS  
-//****************************************************************
-// when we expose this function to our app using module.exports
-// load all the things we need
-/*
-var LocalStrategy   = require('passport-local').Strategy;
-var pg           = require('pg');
-
-const connectionString = {
-   	 user: environment.DB_USER,
-    	password: environment.DB_PASS,
-    	database: environment.DB_NAME,
-   	 port: 5432,
-    	host: environment.DB_HOST,
-    	ssl: true
-	};
-
-//this initializes a connection pool
-//it will keep idle connections open for a 30 seconds
-//and set a limit of maximum 10 idle
-var client = new pg.Pool(connectionString);
-
-// load up the user model
-var User            = require('../SomePath/user');
-*/
-//module.exports = function(passport) {
 
 //since this is NOT imported as module, name it
  function configPassport(passport) {
@@ -440,24 +303,7 @@ var User            = require('../SomePath/user');
             clientSecret    : '82c3c35b10b27be95c6aeb0a97558ac5',
             callbackURL     : 'http://localhost:5000/login/callback',
             profileFields: ['id', 'name','picture.type(large)', 'emails', 'displayName', 'about', 'gender'], 
-            
-            //RETURN FROM FB:
-            /*
-			{ id: '10100575364401165',
-  				username: undefined,
-  				displayName: 'Jared Nugent',
-  				name: 
-  				 { familyName: undefined,
-     				givenName: undefined,
-    				 middleName: undefined },
-  				gender: undefined,
-  				profileUrl: undefined,
- 				provider: 'facebook',
-  				_raw: '{"name":"Jared Nugent","id":"10100575364401165"}',
- 			   _json: { name: 'Jared Nugent', id: '10100575364401165' }
- 			 }
-
-				*/
+           
         },
 
         // facebook will send back the token and profile
@@ -512,9 +358,30 @@ var User            = require('../SomePath/user');
 passport = configPassport(passport);
 
 // required for passport
-app.use(session({ secret: 'topSecretStuff411' })); // session secret
+app.use(sessionMiddleware); // session secret
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
+
+
+//A server that integrates with (or mounts on) the Node.JS HTTP Server: socket.io
+//http://stackoverflow.com/questions/13095418/how-to-use-passport-with-express-and-socket-io
+var io = require('socket.io')(http) 
+	.use(function(socket, next){
+        // Wrap the express middleware
+        console.log('IO MID WARE: ',Object.keys(socket));
+        sessionMiddleware(socket.request,{}, next)
+    })
+    .on("connection", function(socket){
+        var userId = socket.request.session.passport.user;
+        console.log("Socket-info from passport", userId);
+        console.log("Socket ID:", socket.id)
+    });
+
+
+
+
+
+
 
 // process the login form
 // app.post('/login', do all our passport stuff here);
@@ -548,28 +415,8 @@ app.get('/login/callback',
   });    
 
 
- //socketio listener for 'connection'
-io.on('connection', function(socket){
-		
-						console.log('hi socket: ',socket.id);
-						
-						
-						//io.to(socket.id).emit('profile',fbProfile._json.id));
-						//  console.log('socketID: ',socket.io.engine.id)
-						//
-						 //io.to(socketID).emit('profile',fbProfile._json.id);
-						//              
-						//io.emit('removePlayer',ID);
-	
-		});
     
-/*
-//facebook will return user here
- app.get('/login/callback', isLoggedIn, function(req, res) {
-        console.log(req.user);
-        res.sendFile(__dirname+'/login.html')
-    });
-*/
+
  app.get('/home', function(req, res) {
         console.log(req.user);
         res.sendFile(__dirname+'/home.html')
@@ -590,32 +437,6 @@ function isLoggedIn(req, res, next) {
 }
 
    
-/*
-app.post('/login', 
-    passport.authenticate('local-login', { 
-    	failureRedirect: '/home', 
-    	failureFlash: true }),
-    function(req, res) {
-        res.redirect('/login');
-});
-*/
-/*
-app.post('/login', (request,response,next) => {
-		console.log(request.body)
-			passport.authenticate('local-login', (err, user, info) => {
-				console.log("AUTH")
-   		 if (err) { 
-   		 	console.log(err)
-   		 	response.sendFile(__dirname+'/home.html')}
-   		 if (!user) { 
-   		 	console.log('no user',err, user, info)
-   		 	response.sendFile(__dirname+'/home.html')}
-    		if (user) { 
-    			console.log('found user')
-    			response.sendFile(__dirname+'/login.html')
-    			}
-  		})(request, response, next);
-   });
- */
+
  
  
