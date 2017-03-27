@@ -1,0 +1,62 @@
+<!doctype html>
+<!--
+https://github.com/reliableJARED/YumBarrio
+-->
+<html>
+  <head>
+    <title>A Tasty Neighborhood</title>
+  </head>
+  
+
+  <body>
+
+		<script src="socket.io.min.js"></script>	 
+ 	
+
+
+<button id="getIngredients">Select By Ingredients</button>
+
+
+
+<form id="ingredientSelect" action="/useIngredients" method="post" style="visibility:hidden;">
+     <select name="ingredients">
+  		   <option value="chicken">Chicken</option>
+  		</select>
+  		<br>
+       <input type="submit" value="ingredients"/>
+
+</form>
+
+
+<script type="text/javascript" >
+// exposes a global for our socket connection
+var socket = io();
+
+socket.on('connect',function(msg){
+			console.log('connected');
+		});
+		
+	socket.on('SelectOptions',function(msg){
+			console.log(msg);
+			document.getElementById("ingredientSelect").style.visibility = 'visible';
+			});
+			
+function dropDownPopulate(selectionList) {
+		console.log(selectionList);
+		
+		var selector = document.getElementById("ingredientSelect");
+		var newSelection = document.createElement("option");
+		newButton.setAttribute('value','broccoli');
+		selector.appendChild(newSelection);
+}
+
+document.getElementById("getIngredients").onclick = AskServerForIngredientList;
+
+function AskServerForIngredientList(){
+	socket.emit('ingredientSelectOptions')
+}
+</script>
+
+
+  </body>
+</html>

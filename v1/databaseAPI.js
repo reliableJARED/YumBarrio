@@ -6,11 +6,11 @@ https://github.com/brianc/node-postgres/wiki/Parameterized-queries-and-Prepared-
 */
 
 
-var pg = require('pg');
-var passport = require('passport')
-var LocalStrategy = require('passport-local').Strategy;
 var app = require('express')();
 var bodyParser = require('body-parser');
+var pg = require('pg');
+ 
+
 
 //use the `bodyParser()` middleware in app
 //this way response.body will work to get form inputs easy
@@ -18,10 +18,14 @@ app.use(bodyParser());
 
 //Express initializes app to be a function handler that you can supply to an HTTP server
 var http = require('http').createServer(app);
+var io = require('socket.io')(http)
+
 
 //required for serving locally when testing
 var serveStatic = require('serve-static');
-//app.use(express.static('directorypath')) --Express tool for local serving
+app.use(serveStatic(__dirname + '/v1/'));
+app.use(serveStatic(__dirname + '/socket.io/'));
+//app.use(express.static('/v1')) //--Express tool for local serving
 
 
 //listen for connections
@@ -34,6 +38,8 @@ http.listen(port,function(){ // Local Host
 	console.log('*************************************************');
 	});	
 	
+	
+//envData accesses sensitive data like passwords which are saved outside of git repo
 function envData() {
 	var envData;
 	try {
@@ -69,10 +75,13 @@ ConnectionPool.connect(function (err,client,done) {
 });
 */
 
+
+/*
 app.post('/login', (request, response, next) => {
  
   // Get a Postgres client from the connection pool
   ConnectionPool.connect(function(err, client, done) {
+  	
     // Handle connection errors
     if(err) {
       console.log(err);
@@ -95,10 +104,27 @@ app.post('/login', (request, response, next) => {
 
   });
 });
+*/
 
+
+io.on('connection', function(socket){
+	
+	
+	socket.on('disconnect', function(){
+		console.log(this.id);
+	});
+	
+	socket.on('ingredientSelectOptions',function(){
+		console.log(this.id);
+		io.to(socket.id).emit('SelectOptions',{'veggie':'broccoli'});
+	});
+	
+	
+	
+});
  
 //serve HTML to initial get request
 app.get('/', function(request, response){
-	response.sendFile(__dirname+'/home.html');
+	response.sendFile(__dirname+'/dbAPI.html');
 });
 
